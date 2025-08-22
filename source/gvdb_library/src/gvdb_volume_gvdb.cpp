@@ -3187,8 +3187,13 @@ void VolumeGVDB::StartRasterGL ()
 {
 	#ifdef BUILD_OPENGL
 		ValidateOpenGL ();
-		makeSimpleShaderGL (mScene, "simple.vert.glsl", "simple.frag.glsl");
-		makeVoxelizeShader  ( mScene, "voxelize.vert.glsl", "voxelize.frag.glsl", "voxelize.geom.glsl" );
+		// Use explicit gvdb shader directory so shaders are found regardless of CWD/search-paths
+		makeSimpleShaderGL (mScene, "../external/gvdb/source/gvdb_library/shaders/simple.vert.glsl", 
+				"../external/gvdb/source/gvdb_library/shaders/simple.frag.glsl");
+		makeVoxelizeShader  ( mScene, 
+				"../external/gvdb/source/gvdb_library/shaders/voxelize.vert.glsl", 
+				"../external/gvdb/source/gvdb_library/shaders/voxelize.frag.glsl", 
+				"../external/gvdb/source/gvdb_library/shaders/voxelize.geom.glsl" );
 	#endif
 }
 

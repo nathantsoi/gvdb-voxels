@@ -265,6 +265,9 @@ int Scene::AddShader ( int prog_id, const char* vertfile, const char* fragfile, 
 		gprintf ( "ERROR: Unable to open '%s'\n", fragfile ); 
 		gerror ();
 	}
+	// Diagnostic: print resolved shader paths
+	gprintf("DEBUG: Resolved vertex shader path: %s\n", vertpath);
+	gprintf("DEBUG: Resolved fragment shader path: %s\n", fragpath);
 	if ( geomfile != 0x0 ) { 
 	if ( !FindFile ( geomfile, geompath ) ) {
 		gprintf ( "ERROR: Unable to open '%s'\n", geomfile ); 
@@ -370,12 +373,78 @@ int	Scene::AddParam ( int prog_id, int id, const char* name )
 	int prog = mProgram[prog_id];
 	int active = 0;
 	glGetProgramiv ( prog, GL_ACTIVE_UNIFORMS, &active );
-	int ndx = glGetProgramResourceIndex ( prog, GL_UNIFORM, name );	
+	int ndx = -1;
+	// Prefer program resource index when available, but fall back to classic uniform location lookup
+	// as some GL drivers/contexts may not expose resources the same way.
+	#ifdef GL_VERSION_4_3
+		ndx = glGetProgramResourceIndex ( prog, GL_UNIFORM, name );
+	#endif
+	if ( ndx == -1 ) {
+		ndx = glGetUniformLocation( prog, name );
+	}
+	// If not found, try common alternate names (strip leading 'u', common variants)
+	if ( ndx == -1 ) {
+		std::vector<std::string> alts;
+		std::string sname(name);
+		// if name starts with 'u' followed by upper-case, try stripping it
+		if ( sname.size() > 1 && (sname[0] == 'u' || sname[0] == 'U') && isupper((unsigned char)sname[1]) ) {
+			alts.push_back(sname.substr(1));
+		}
+		// lower-case variant
+		std::string low = sname;
+		for (auto &c: low) c = (char)tolower((unsigned char)c);
+		alts.push_back(low);
+		// common replacements
+		if ( sname.find("Proj") != std::string::npos || sname.find("PROJ") != std::string::npos ) {
+			alts.push_back("projection");
+			alts.push_back("projMatrix");
+		}
+		if ( sname.find("View") != std::string::npos || sname.find("VIEW") != std::string::npos ) {
+			alts.push_back("view");
+			alts.push_back("viewMatrix");
+		}
+		if ( sname.find("Model") != std::string::npos || sname.find("MODEL") != std::string::npos ) {
+			alts.push_back("model");
+			alts.push_back("modelMatrix");
+		}
+		// try each alternate
+		for (auto &an : alts) {
+			int cand = -1;
+			#ifdef GL_VERSION_4_3
+				cand = glGetProgramResourceIndex ( prog, GL_UNIFORM, an.c_str() );
+			#endif
+			if ( cand == -1 ) cand = glGetUniformLocation( prog, an.c_str() );
+			if ( cand != -1 ) {
+				ndx = cand;
+				gprintf ( "INFO: Matched alternate uniform name '%s' for '%s' in %s -> loc=%d\n", an.c_str(), name, mLastShader.c_str(), ndx );
+				break;
+			}
+		}
+	}
 	int slot = getSlot ( prog_id );
-	if ( slot == -1 || ndx == -1 ) {
-		gprintf ( "ERROR: Unable to access %s in %s. Active uniforms = %d\n", name, mLastShader.c_str(), active );
+	if ( slot == -1 ) {
+		gprintf ( "ERROR: Invalid shader slot for program id %d when accessing %s in %s. Active uniforms = %d\n", prog_id, name, mLastShader.c_str(), active );
 		gerror ();
 	}
+
+	if ( ndx == -1 ) {
+		gprintf ( "WARNING: Unable to access %s in %s. Active uniforms = %d. Setting parameter to -1 and continuing.\n", name, mLastShader.c_str(), active );
+		// Diagnostic: list active uniform names and their locations
+		int maxNameLen = 0;
+		glGetProgramiv(prog, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxNameLen);
+		if ( maxNameLen > 0 ) {
+			std::vector<char> uname(maxNameLen);
+			for (int i = 0; i < active; ++i) {
+				GLint size = 0; GLenum type = 0; GLsizei length = 0;
+				glGetActiveUniform(prog, i, maxNameLen, &length, &size, &type, uname.data());
+				int loc = glGetUniformLocation(prog, uname.data());
+				gprintf("  Active[%d] name='%s' size=%d type=0x%x loc=%d\n", i, uname.data(), size, type, loc);
+			}
+		}
+		mParams[slot].p[id] = -1;
+		return -1;
+	}
+
 	mParams[slot].p[id] = ndx;
 	return ndx;
 }

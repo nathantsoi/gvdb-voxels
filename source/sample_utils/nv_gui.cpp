@@ -749,10 +749,17 @@ void nvDraw::CreateSColor ()
 		glUseProgram( mSH[SCOLOR] );
 		checkGL( "Use program" );
 
-		mProj[SCOLOR] =		glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "projMatrix" );	
-		mModel[SCOLOR] =	glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "modelMatrix" );	
-		mView[SCOLOR] =		glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "viewMatrix" );	
-		mFont[SCOLOR] =		glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "fontTex" );	
+		#ifdef GL_VERSION_4_3
+			mProj[SCOLOR] = glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "projMatrix" );
+			mModel[SCOLOR] = glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "modelMatrix" );
+			mView[SCOLOR] = glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "viewMatrix" );
+			mFont[SCOLOR] = glGetProgramResourceIndex ( mSH[SCOLOR], GL_UNIFORM, "fontTex" );
+		#else
+			mProj[SCOLOR] = glGetUniformLocation( mSH[SCOLOR], "projMatrix" );
+			mModel[SCOLOR] = glGetUniformLocation( mSH[SCOLOR], "modelMatrix" );
+			mView[SCOLOR] = glGetUniformLocation( mSH[SCOLOR], "viewMatrix" );
+			mFont[SCOLOR] = glGetUniformLocation( mSH[SCOLOR], "fontTex" );
+		#endif
 		checkGL( "Get Shader Matrices" );
 	#endif
 }
@@ -836,9 +843,15 @@ void nvDraw::CreateSInst ()
 	glUseProgram( mSH[SINST] );
 	checkGL( "Use program" );
 
-	mProj[SINST] =	glGetProgramResourceIndex ( mSH[SINST], GL_UNIFORM, "projMatrix" );	
-	mModel[SINST] =	glGetProgramResourceIndex ( mSH[SINST], GL_UNIFORM, "modelMatrix" );	
-	mView[SINST] =	glGetProgramResourceIndex ( mSH[SINST], GL_UNIFORM, "viewMatrix" );		
+	#ifdef GL_VERSION_4_3
+		mProj[SINST] = glGetProgramResourceIndex ( mSH[SINST], GL_UNIFORM, "projMatrix" );
+		mModel[SINST] = glGetProgramResourceIndex ( mSH[SINST], GL_UNIFORM, "modelMatrix" );
+		mView[SINST] = glGetProgramResourceIndex ( mSH[SINST], GL_UNIFORM, "viewMatrix" );
+	#else
+		mProj[SINST] = glGetUniformLocation( mSH[SINST], "projMatrix" );
+		mModel[SINST] = glGetUniformLocation( mSH[SINST], "modelMatrix" );
+		mView[SINST] = glGetUniformLocation( mSH[SINST], "viewMatrix" );
+	#endif
 	checkGL( "Get Shader Matrices" );	
 }
 
@@ -915,10 +928,17 @@ void nvDraw::CreateS3D ()
 	glUseProgram( mSH[S3D] );
 	checkGL( "Use program" );
 
-	mProj[S3D] =	glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "projMatrix" );	
-	mModel[S3D] =	glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "modelMatrix" );	
-	mView[S3D] =	glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "viewMatrix" );	
-	mLight[S3D] =	glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "lightpos" );	
+	#ifdef GL_VERSION_4_3
+		mProj[S3D] = glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "projMatrix" );
+		mModel[S3D] = glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "modelMatrix" );
+		mView[S3D] = glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "viewMatrix" );
+		mLight[S3D] = glGetProgramResourceIndex ( mSH[S3D], GL_UNIFORM, "lightpos" );
+	#else
+		mProj[S3D] = glGetUniformLocation( mSH[S3D], "projMatrix" );
+		mModel[S3D] = glGetUniformLocation( mSH[S3D], "modelMatrix" );
+		mView[S3D] = glGetUniformLocation( mSH[S3D], "viewMatrix" );
+		mLight[S3D] = glGetUniformLocation( mSH[S3D], "lightpos" );
+	#endif
 	checkGL( "Get Shader Matrices" );	
 }
 
