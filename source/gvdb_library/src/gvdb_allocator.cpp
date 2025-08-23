@@ -792,7 +792,19 @@ bool Allocator::AtlasResize(uchar chan, uint64 max_leaf) {
     gprintf("  - Atlas expansion blocked to prevent GPU memory exhaustion\n");
     gprintf(
         "  - Consider reducing model complexity or increasing voxel size\n");
+    gprintf("  - Current atlas usage: %llu / %llu bricks\n", max_leaf, uint64(axiscnt.x * axiscnt.y * axiscnt.z));
+    gprintf("  - Expansion would need %llu bricks but limit is %d\n", max_leaf, axiscnt.x * axiscnt.y * 50);
     return false;
+  }
+
+  // Additional safety check for moderate expansions
+  if (newZ > axiscnt.z * 2 && newZ > 16) {
+    gprintf("WARNING: Large atlas expansion detected!\n");
+    gprintf("  - Current Z: %d, requested Z: %d (%.1fx growth)\n", 
+            axiscnt.z, newZ, float(newZ) / float(axiscnt.z));
+    gprintf("  - This suggests the voxel size may be too small for the model\n");
+    gprintf("  - Current leaf request: %llu, current capacity: %d\n", 
+            max_leaf, axiscnt.x * axiscnt.y * axiscnt.z);
   }
 
   axiscnt.z = newZ; // expand number of bricks along Z-axis
